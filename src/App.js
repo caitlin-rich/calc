@@ -12,7 +12,7 @@ import "./App.css";
 
 // Remaining Requirements
 // 5.3 Parentheses
-//// -I can use my previous code for checking to see if parenthesis are balanced to check, and then start at the innermost parens and solve outward with the code below. 
+//// -I can use my previously written code for checking to see if parenthesis are balanced (and return an error if not), and then start at the innermost parens and solve outward with the code below. 
 
 //Other To-Do
 // -this is a MONSTER, try and optimize! I'm sure some of this can be condensed. It's so many loops right now! 
