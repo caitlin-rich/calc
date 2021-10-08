@@ -2,11 +2,10 @@ import React, { useState } from "react";
 import "./App.css";
 
 // Remaining To-Do
-// -negative numbers w/ multiplication and division
 // -parentheses
 // -this is a MONSTER, try and optimize - if we need 175 lines we need 175 lines, but i bet we can condense and still have it be clean, readable code!
 // -review comments and layout
-// -multiplication w/ parenthesis? not called for, but might be fun
+// -multiplication w/ parenthesis instead of *? not called for, but might be fun
 // -exponents if you have time bc might as well go for the full PEMDAS
 
 function App() {
@@ -15,6 +14,11 @@ function App() {
 
   function onSubmit(e) {
     e.preventDefault();
+
+    if (!value) {
+      setResult("Please enter an equation.");
+      return;
+    }
 
     //Gets rid of any spaces so we don't have to deal with them when parsing the string
     let tempNoSpacesArray = value.split(" ");
@@ -51,49 +55,22 @@ function App() {
         }
       }
 
-      //NEGATIVE NUMBER HANDLERS
-
-      //for addition and subtraction, this approach makes sense - but it doesn't work with multiplication and division. 
-     //If there is a negative sign, and the second-to-last entry in mathProblems is a - (indicating that the number we're operating with is also a negative), then we can just pop both thta negative and the current negative off bc they (ha) negate each other. 
-     //if the second-to-last-entry is NOT a negative, indicating it's a positive number...then we remove the negative and then multiply the result by (-1)? I'm not sure how we'd do that. 
-     //Would it make sense to just do the math here instead of passing it down...? so if it's 8/-4, if 8 is positive...no, that won't work bc we don't have the next number yet. which is why we're doing all this in the first place, to get the whole thing. 
-
-     //THIS BRINGS UP - could i do the running total AS we parse the string? That sounds like something to look at after we figure out full functionality.
-     
-     //HOLD ON AM I AGGRESIVELY OVERTHINKING THIS
-     //IT SEEMS LIKE THE JAVASCRIPT OPERATOR SHOULD JUST LIKE DO THE THING. I DONT THINK I NEED TO ADD THINGS SPECIFICALLY AS NEGATIVE NUMBERS I THINK THEY CAN JUST BE ADDED AS OPERATORS? 
-     //I mean I think i'd have to handle it in the calcuations segment, but like, that feels like it makes more sense??? 
-
-      //handles negative number if the first number in the equation is negative
-      if (currChar === "-" && i === 0) {
-        tempNum = 0;
-      }
-
-      //handles negative numbers when - isn't the first character in the equation
-      //this if statement checks to see if the - is a second operator, AKA a negative number
-      if (currChar === "-" && operators.includes(valueWithoutSpaces[i - 1])) {
-
-        //if a problem is -2*-2 or -2/-2: if the second operator is -, we check to see if there's a negative (not a minus) ahead of the previous number. 
-        
-
-
-
-        //If the equation is 2--2, that cancels out to 2+2, so we replace the two "-" with one "+"
-        if (valueWithoutSpaces[i - 1] === "-") {
-          mathProblem.pop();
-          mathProblem.push("+");
-        }
-
-        //this might have to be tweaked, but currently if it's NOT --, it adds a zero in to make the negative work (aka 2+-2 becomes 2+0-2)
-        //this is why it's only working with addition and subtraction currently. 2/-2 !== 2/0-2! 
-        if (valueWithoutSpaces[i - 1] !== "-") {
-          mathProblem.push(0);
-          mathProblem.push(currChar);
-        }
-      }
-
       //OPERATOR HANDLERS
-      if (operators.includes(currChar)) {
+
+      if (currChar === "-" && i === 0) {
+        mathProblem.push(0);
+        mathProblem.push(currChar);
+      }
+
+      if (
+        (currChar === "*" || currChar === "/" || currChar === "+") &&
+        i === 0
+      ) {
+        setResult("Invalid input. Equation cannot start with an operator.");
+        return;
+      }
+
+      if (operators.includes(currChar) && i !== 0) {
         //Displays error if more than two operators in a row
         if (
           operators.includes(valueWithoutSpaces[i - 1]) &&
@@ -104,7 +81,7 @@ function App() {
         }
 
         if (currChar !== "-" && operators.includes(valueWithoutSpaces[i - 1])) {
-          setResult("Invalid input.");
+          setResult('Invalid input. Second operator can only be "-".');
           return;
         }
 
@@ -114,11 +91,11 @@ function App() {
 
           tempNum = null;
         }
-        if (!operators.includes(valueWithoutSpaces[i - 1])) {
-          mathProblem.push(currChar);
-        }
+
+        mathProblem.push(currChar);
       }
 
+      //Equation must end with a number
       if (i === valueWithoutSpaces.length - 1) {
         if (!numbers.includes(currChar)) {
           setResult("Equation cannot end with an operator.");
@@ -134,28 +111,121 @@ function App() {
     let runningTotal = null;
 
     //this handles the order of operations - this while loop does the multiplication and division first, and then once that's done, we go down to the addition and subtraction loop
-    //NEED TO FIX UP W/ THE NEGATIVE NUMBERS FOR MULTIPLICATION AND DIVISION
+
     while (mathProblem.includes("*")) {
       let total = 0;
-      let operatorIndex = mathProblem.findIndex(e => e === "*");
-      total = mathProblem[operatorIndex - 1] * mathProblem[operatorIndex + 1];
-      mathProblem[operatorIndex] = total;
-      mathProblem.splice(operatorIndex - 1, 1);
-      mathProblem.splice(operatorIndex, 1);
+      let opIdx = mathProblem.findIndex(e => e === "*");
+
+      //We need the leading zero for addition and subtraction, but don't want it for multiplication, but can't figure out what the upcoming operation is when we're parsing the original string (because we don't know how long the next number is yet) so this checks if there's a leading zero and deletes it.
+      if (mathProblem[opIdx - 3] === 0 && opIdx - 3 === 0) {
+        mathProblem.splice(0, 1);
+        opIdx = mathProblem.findIndex(e => e === "*");
+      }
+
+      //Multiplying two negative numbers, ex. -5*-5
+      if (
+        mathProblem[opIdx + 1] === "-" &&
+        mathProblem[opIdx - 2] === "-" &&
+        (operators.includes(mathProblem[opIdx - 3]) || opIdx - 2 === 0)
+      ) {
+        mathProblem.splice(opIdx + 1, 1); //removes the immediately following "-"
+        mathProblem.splice(opIdx - 2, 1); //removes the preceding "-"
+        opIdx = mathProblem.findIndex(e => e === "*"); //updates the operator index with new index
+      }
+
+      //when multiplying one positive times one negative number, with positive number first, this updates the format from "5*-5" to "-5*5" so we can use the logic built in below.
+      if (
+        mathProblem[opIdx + 1] === "-" &&
+        (opIdx - 1 === 0 || numbers.includes(mathProblem[opIdx - 3]))
+      ) {
+        mathProblem.splice(opIdx + 1, 1);
+        mathProblem.splice(opIdx - 1, 0, "-");
+        opIdx = mathProblem.findIndex(e => e === "*");
+      }
+
+      total = mathProblem[opIdx - 1] * mathProblem[opIdx + 1];
+
+      //This (and the below 'if' statement) handle operating with one negative and one positive number
+      if (mathProblem[opIdx - 2] === "-" && opIdx - 2 === 0) {
+        total *= -1;
+      }
+
+      mathProblem[opIdx] = total;
+      mathProblem.splice(opIdx - 1, 1);
+      mathProblem.splice(opIdx, 1);
+
+      if (mathProblem[opIdx - 2] === "-" && opIdx - 2 === 0) {
+        mathProblem.splice(0, 1);
+      }
     }
 
     while (mathProblem.includes("/")) {
       let total = 0;
-      let operatorIndex = mathProblem.findIndex(e => e === "/");
-      total = mathProblem[operatorIndex - 1] / mathProblem[operatorIndex + 1];
-      mathProblem[operatorIndex] = total;
-      mathProblem.splice(operatorIndex - 1, 1);
-      mathProblem.splice(operatorIndex, 1);
+      let opIdx = mathProblem.findIndex(e => e === "/");
+
+      //We need the leading zero for addition and subtraction, but don't want it for division, but can't figure out what the upcoming operation is when we're parsing the original string (because we don't know how long the next number is yet) so this checks if there's a leading zero and deletes it.
+      if (mathProblem[opIdx - 3] === 0 && opIdx - 3 === 0) {
+        mathProblem.splice(0, 1);
+        opIdx = mathProblem.findIndex(e => e === "/");
+      }
+
+      //Dividing two negative numbers, ex. -5/-5
+      if (
+        mathProblem[opIdx + 1] === "-" &&
+        mathProblem[opIdx - 2] === "-" &&
+        (operators.includes(mathProblem[opIdx - 3]) || opIdx - 2 === 0)
+      ) {
+        mathProblem.splice(opIdx + 1, 1);
+        mathProblem.splice(opIdx - 2, 1);
+        opIdx = mathProblem.findIndex(e => e === "/");
+      }
+
+      //when dividing one positive times one negative number, with positive number first, this updates the format from "5/-5" to "-5/5" so we can use the logic built in below.
+      if (
+        mathProblem[opIdx + 1] === "-" &&
+        (opIdx - 1 === 0 || numbers.includes(mathProblem[opIdx - 3]))
+      ) {
+        mathProblem.splice(opIdx + 1, 1);
+        mathProblem.splice(opIdx - 1, 0, "-");
+        opIdx = mathProblem.findIndex(e => e === "/");
+      }
+
+      total = mathProblem[opIdx - 1] / mathProblem[opIdx + 1];
+
+      //This (and the below 'if' statement) handle operating with one negative and one positive number
+      if (mathProblem[opIdx - 2] === "-" && opIdx - 2 === 0) {
+        total /= -1;
+      }
+
+      mathProblem[opIdx] = total;
+      mathProblem.splice(opIdx - 1, 1);
+      mathProblem.splice(opIdx, 1);
+
+      if (mathProblem[opIdx - 2] === "-" && opIdx - 2 === 0) {
+        mathProblem.splice(0, 1);
+      }
+    }
+
+    //If problem only has multiplication or division, the problem will be solved at this point and we can return the result.
+    if (!mathProblem.includes("+") && !mathProblem.includes("-")) {
+      setResult(mathProblem);
+      return;
     }
 
     //handles addition and subtraction once any multiplication and division is done
     for (let i = 0; i < mathProblem.length; i++) {
       let currChar = mathProblem[i];
+
+      //this handles the '--' situation
+      if (currChar === "-" && mathProblem[i + 1] === "-") {
+        mathProblem.splice(i, 1);
+        currChar = "+";
+      }
+
+      if (currChar === "+" && mathProblem[i + 1] === "-") {
+        mathProblem.splice(i, 1);
+        currChar = "-";
+      }
 
       if (currChar === "+") {
         runningTotal
