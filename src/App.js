@@ -1,12 +1,24 @@
 import React, { useState } from "react";
 import "./App.css";
 
-// Remaining To-Do
-// -parentheses
-// -this is a MONSTER, try and optimize - if we need 175 lines we need 175 lines, but i bet we can condense and still have it be clean, readable code!
+//Current functionality:
+//1. The program runs
+//2. + and - for whole numbers
+//3. + and - for all integers
+//4. * and / for all integers
+//5.1 Input validation
+//5.2 Decimals
+
+
+// Remaining Requirements
+// 5.3 Parentheses
+//// -I can use my previous code for checking to see if parenthesis are balanced to check, and then start at the innermost parens and solve outward with the code below. 
+
+//Other To-Do
+// -this is a MONSTER, try and optimize! I'm sure some of this can be condensed. It's so many loops right now! 
 // -review comments and layout
-// -multiplication w/ parenthesis instead of *? not called for, but might be fun
-// -exponents if you have time bc might as well go for the full PEMDAS
+// -multiplication w/ parenthesis instead of *? (aka 5(6+3) and not 5*(6+3)) Not called for, but might be fun
+// -exponents if you have time bc might as well go for the full PEMDAS :)
 
 function App() {
   const [value, setValue] = useState(null);
@@ -40,12 +52,12 @@ function App() {
         currChar !== " "
       ) {
         setResult(
-          "Invalid input. Problem can only contain numbers, parentheses, and the operators +, -, *, and /."
+          "Invalid input. Problem can only contain numbers and the operators +, -, *, and /. (Functionality for parentheses is under development."
         );
         return;
       }
 
-      //NUMBERS HANDLERS
+      //NUMBER HANDLERS
       if (numbers.includes(currChar)) {
         if (tempNum !== null) {
           tempNum += currChar;
@@ -71,7 +83,6 @@ function App() {
       }
 
       if (operators.includes(currChar) && i !== 0) {
-        //Displays error if more than two operators in a row
         if (
           operators.includes(valueWithoutSpaces[i - 1]) &&
           operators.includes(valueWithoutSpaces[i + 1])
@@ -86,9 +97,7 @@ function App() {
         }
 
         if (tempNum !== null) {
-          let tempParsed = parseFloat(tempNum);
-          mathProblem.push(tempParsed);
-
+          mathProblem.push(parseFloat(tempNum));
           tempNum = null;
         }
 
@@ -101,8 +110,7 @@ function App() {
           setResult("Equation cannot end with an operator.");
           return;
         }
-        let tempParsed = parseFloat(tempNum);
-        mathProblem.push(tempParsed);
+        mathProblem.push(parseFloat(tempNum));
         tempNum = null;
       }
     }
@@ -110,7 +118,7 @@ function App() {
     //CALCULATIONS!
     let runningTotal = null;
 
-    //this handles the order of operations - this while loop does the multiplication and division first, and then once that's done, we go down to the addition and subtraction loop
+    //this handles the order of operations - the while loops do the multiplication and division first, and then once that's done, we go down to the addition and subtraction loop
 
     while (mathProblem.includes("*")) {
       let total = 0;
